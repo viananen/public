@@ -409,9 +409,9 @@
     const screensaverContainer = document.getElementById('screensaver-container');
     let t = 0;
     function animateScreensaver() {
-      // Max movement: about 1.5px in any direction, very slow and subtle
-      const dx = Math.sin(t / 97) * 1.5 + Math.cos(t / 113) * 1.2;
-      const dy = Math.cos(t / 89) * 1.5 + Math.sin(t / 107) * 1.2;
+      // Max movement: about 4px in any direction, still subtle but more visible
+      const dx = Math.sin(t / 97) * 4 + Math.cos(t / 113) * 3.5;
+      const dy = Math.cos(t / 89) * 4 + Math.sin(t / 107) * 3.5;
       screensaverContainer.style.transform = `translate(${dx}px, ${dy}px)`;
       t++;
       requestAnimationFrame(animateScreensaver);
