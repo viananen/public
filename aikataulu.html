@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="fi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>AIKATAULU</title>
+  <style>
+    body {
+      font-family: "Segoe UI", Arial, sans-serif;
+      background: #f8f9fa;
+      margin: 0;
+      padding: 0;
+    }
+    .container {
+      max-width: 440px;
+      margin: 40px auto;
+      background: #fff;
+      border-radius: 12px;
+      box-shadow: 0 3px 16px #0002;
+      padding: 32px 24px 24px 24px;
+    }
+    h1, .editable-title {
+      font-size: 2.1em;
+      text-align: center;
+      margin-bottom: 30px;
+      color: #22274d;
+      letter-spacing: 2px;
+      cursor: pointer;
+    }
+    .editable-title-input {
+      width: 100%;
+      font-size: 2.1em;
+      text-align: center;
+      margin-bottom: 30px;
+      color: #22274d;
+      letter-spacing: 2px;
+      border: none;
+      outline: none;
+      background: #f8f9fa;
+    }
+    .edit-controls {
+      display: flex;
+      justify-content: flex-end;
+      margin-bottom: 10px;
+    }
+    .edit-toggle-btn {
+      background: #e1e8f2;
+      color: #324a78;
+      border: 1px solid #b8c4d6;
+      border-radius: 5px;
+      padding: 4px 13px;
+      font-size: 1em;
+      cursor: pointer;
+      transition: background 0.13s;
+      margin-bottom: 18px;
+    }
+    .edit-toggle-btn.active {
+      background: #2078cf;
+      color: #fff;
+      border: 1px solid #2078cf;
+    }
+    ul.timetable {
+      list-style: none;
+      padding: 0;
+      margin: 0 0 18px 0;
+    }
+    ul.timetable li {
+      font-size: 1.12em;
+      padding: 10px 0;
+      border-bottom: 1px solid #eee;
+      display: flex;
+      align-items: center;
+      cursor: pointer;
+      transition: background 0.15s;
+      position: relative;
+    }
+    ul.timetable li:last-child {
+      border-bottom: none;
+    }
+    ul.timetable li.group {
+      font-weight: bold;
+      color: #324a78;
+      background: #f3f6fa;
+      cursor: pointer;
+      padding-left: 30px;
+    }
+    ul.timetable li:hover {
+      background: #e8f1ff;
+    }
+    .time {
+      width: 56px;
+      font-weight: bold;
+      color: #2d3d5b;
+      margin-right: 10px;
+      flex-shrink: 0;
+    }
+    .edit-input {
+      font-size: 1.08em;
+      padding: 4px 6px;
+      width: 92%;
+      margin-left: 2px;
+    }
+    .edit-input-time {
+      width: 60px;
+      font-size: 1.08em;
+      margin-right: 10px;
+      padding: 4px 6px;
+    }
+    .hint {
+      color: #7192b0;
+      font-size: 1em;
+      margin-top: 16px;
+      text-align: center;
+      letter-spacing: 0.5px;
+    }
+    .delete-btn {
+      background: transparent;
+      color: #e15b5b;
+      border: none;
+      border-radius: 50%;
+      width: 26px;
+      height: 26px;
+      margin-left: 8px;
+      font-size: 1.2em;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0.15;
+      transition: opacity 0.2s, background 0.2s;
+      visibility: hidden;
+      position: absolute;
+      right: 0;
+      top: 50%;
+      transform: translateY(-50%);
+    }
+    .delete-btn:active {
+      background: #ffeaea;
+    }
+    .edit-mode .delete-btn {
+      visibility: visible;
+      opacity: 0.6;
+    }
+    .edit-mode .delete-btn:hover {
+      opacity: 1;
+      background: #ffeaea;
+    }
+    .add-row-btn {
+      display: none;
+      margin: 15px auto 0 auto;
+      background: #2078cf;
+      color: #fff;
+      border: none;
+      border-radius: 5px;
+      padding: 9px 28px;
+      font-size: 1.08em;
+      cursor: pointer;
+      transition: background 0.13s;
+    }
+    .edit-mode .add-row-btn {
+      display: block;
+    }
+    .edit-mode .editable-title {
+      border-bottom: 2px dashed #93b9ec;
+      background: #f5faff;
+    }
+    .bottom-link {
+      display: block;
+      text-align: center;
+      margin-top: 36px;
+      font-size: 1.1em;
+      color: #2078cf;
+      text-decoration: none;
+      font-weight: 500;
+      letter-spacing: 1px;
+      transition: color 0.13s;
+    }
+    .bottom-link:hover {
+      color: #1858a0;
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="edit-controls">
+      <button class="edit-toggle-btn" id="editToggleBtn" aria-pressed="false">Muokkaa</button>
+    </div>
+    <div id="title" class="editable-title" tabindex="0">AIKATAULU</div>
+    <ul class="timetable" id="timetable">
+      <li data-editable="true"><span class="time">8:00</span><span class="text">Kuljettajakokous</span><button class="delete-btn" title="Poista">&#10005;</button></li>
+      <li data-editable="true"><span class="time">8:15</span><span class="text">Harjoitukset ja aika-ajot</span><button class="delete-btn" title="Poista">&#10005;</button></li>
+      <li class="group" data-editable="true"><span class="text">MX50</span><button class="delete-btn" title="Poista">&#10005;</button></li>
+      <li class="group" data-editable="true"><span class="text">MX65</span><button class="delete-btn" title="Poista">&#10005;</button></li>
+      <li class="group" data-editable="true"><span class="text">MX85</span><button class="delete-btn" title="Poista">&#10005;</button></li>
+      <li class="group" data-editable="true"><span class="text">Top250</span><button class="delete-btn" title="Poista">&#10005;</button></li>
+      <li data-editable="true"><span class="time">11:00</span><span class="text">Kilpailuerät</span><button class="delete-btn" title="Poista">&#10005;</button></li>
+    </ul>
+    <button class="add-row-btn" id="addRowBtn">Lisää rivi</button>
+    <a class="bottom-link" href="https://viananen.github.io/public/varikkokello.html" rel="noopener">Varikkokello</a>
+    </div>
+    <div class="hint">
+	Copyright: T. Väänänen 2025<br>
+  </div>
+  <script>
+    const timetable = document.getElementById('timetable');
+    const container = document.querySelector('.container');
+    const editToggleBtn = document.getElementById('editToggleBtn');
+    let editMode = false;
+
+    // Toggle editing mode
+    editToggleBtn.addEventListener('click', function() {
+      editMode = !editMode;
+      container.classList.toggle('edit-mode', editMode);
+      editToggleBtn.classList.toggle('active', editMode);
+      editToggleBtn.setAttribute('aria-pressed', editMode ? "true" : "false");
+      editToggleBtn.textContent = editMode ? "Valmis" : "Muokkaa";
+    });
+
+    function makeRowEditable(li) {
+      li.addEventListener('click', function(e) {
+        if (!editMode) return;
+        if (e.target.classList.contains('delete-btn')) return;
+        if (li.querySelector('input')) return;
+
+        let timeElem = li.querySelector('.time');
+        let textElem = li.querySelector('.text');
+        let oldTime = timeElem ? timeElem.textContent : '';
+        let oldText = textElem.textContent;
+
+        let delBtn = li.querySelector('.delete-btn');
+        li.innerHTML = '';
+
+        if (oldTime) {
+          let timeInput = document.createElement('input');
+          timeInput.type = 'text';
+          timeInput.value = oldTime;
+          timeInput.className = 'edit-input-time';
+          timeInput.maxLength = 8;
+          li.appendChild(timeInput);
+
+          let textInput = document.createElement('input');
+          textInput.type = 'text';
+          textInput.value = oldText;
+          textInput.className = 'edit-input';
+          li.appendChild(textInput);
+
+          li.appendChild(delBtn);
+
+          textInput.focus();
+
+          function finishEdit() {
+            li.innerHTML = `<span class="time">${timeInput.value}</span><span class="text">${textInput.value}</span>`;
+            li.appendChild(delBtn);
+          }
+          textInput.addEventListener('blur', finishEdit);
+          textInput.addEventListener('keydown', function(ev) {
+            if (ev.key === 'Enter') finishEdit();
+          });
+          timeInput.addEventListener('keydown', function(ev) {
+            if (ev.key === 'Enter') finishEdit();
+          });
+        } else {
+          let textInput = document.createElement('input');
+          textInput.type = 'text';
+          textInput.value = oldText;
+          textInput.className = 'edit-input';
+          li.appendChild(textInput);
+
+          li.appendChild(delBtn);
+
+          textInput.focus();
+
+          function finishEdit() {
+            li.innerHTML = `<span class="text">${textInput.value}</span>`;
+            li.appendChild(delBtn);
+            li.classList.add('group');
+          }
+          textInput.addEventListener('blur', finishEdit);
+          textInput.addEventListener('keydown', function(ev) {
+            if (ev.key === 'Enter') finishEdit();
+          });
+        }
+      });
+    }
+
+    // Attach editable and delete to all initial rows
+    function addDeleteToRow(li) {
+      const delBtn = li.querySelector('.delete-btn');
+      delBtn.addEventListener('click', function(e) {
+        e.stopPropagation();
+        if (editMode) li.remove();
+      });
+    }
+    timetable.querySelectorAll('li[data-editable="true"]').forEach(function(li) {
+      makeRowEditable(li);
+      addDeleteToRow(li);
+    });
+
+    // Add row functionality
+    document.getElementById('addRowBtn').addEventListener('click', function() {
+      if (!editMode) return;
+      const li = document.createElement('li');
+      li.className = 'group';
+      li.setAttribute('data-editable', 'true');
+      li.innerHTML = `<span class="text">Uusi rivi</span><button class="delete-btn" title="Poista">&#10005;</button>`;
+      makeRowEditable(li);
+      addDeleteToRow(li);
+      timetable.appendChild(li);
+    });
+
+    // Editable title functionality
+    const titleDiv = document.getElementById('title');
+    titleDiv.addEventListener('click', editTitle);
+    titleDiv.addEventListener('keydown', function(e) {
+      if (e.key === "Enter") editTitle();
+    });
+
+    function editTitle() {
+      if (!editMode) return;
+      if (titleDiv.querySelector('input')) return;
+      const oldTitle = titleDiv.textContent;
+      titleDiv.innerHTML = '';
+      const input = document.createElement('input');
+      input.type = 'text';
+      input.value = oldTitle;
+      input.className = 'editable-title-input';
+      titleDiv.appendChild(input);
+      input.focus();
+      input.select();
+      function finishEdit() {
+        titleDiv.textContent = input.value || 'AIKATAULU';
+      }
+      input.addEventListener('blur', finishEdit);
+      input.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') finishEdit();
+      });
+    }
+  </script>
+</body>
+</html>
