@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="fi">
+<head>
+  <meta charset="UTF-8">
+  <title>Aikataulusivu</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    html, body {
+      background: #000;
+      color: #fff;
+      font-family: Arial, Helvetica, sans-serif;
+      margin: 0;
+      padding: 0;
+      min-height: 100vh;
+      width: 100vw;
+    }
+    body {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+      width: 100vw;
+    }
+    #title {
+      font-size: 4vw;
+      font-weight: bold;
+      margin: 2vw 0 2vw 0;
+      text-align: center;
+      outline: none;
+      min-width: 30vw;
+      min-height: 1.5em;
+    }
+    #clock {
+      font-size: 10vw;
+      font-weight: bold;
+      margin: 1vw 0 2vw 0;
+      text-align: center;
+      letter-spacing: 0.05em;
+      user-select: none;
+    }
+    #timetable {
+      width: 90vw;
+      max-width: 700px;
+      margin: 2vw auto;
+      border-collapse: collapse;
+      font-size: 2.5vw;
+      background: #111;
+      border-radius: 1vw;
+      overflow: hidden;
+    }
+    #timetable th, #timetable td {
+      padding: 1vw 2vw;
+      border-bottom: 1px solid #333;
+    }
+    #timetable th {
+      background: #222;
+      font-size: 2vw;
+      text-align: left;
+    }
+    #timetable tr:last-child td {
+      border-bottom: none;
+    }
+    .edit-btn, .save-btn, .add-row-btn {
+      background: #444;
+      color: #fff;
+      border: none;
+      border-radius: 0.5vw;
+      padding: 1vw 2vw;
+      font-size: 2vw;
+      margin: 1vw 0.5vw;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .edit-btn:hover, .save-btn:hover, .add-row-btn:hover {
+      background: #666;
+    }
+    .remove-row-btn {
+      background: #a00;
+      color: #fff;
+      border: none;
+      border-radius: 0.5vw;
+      padding: 0.5vw 1vw;
+      font-size: 1.5vw;
+      cursor: pointer;
+      margin-left: 1vw;
+    }
+    .remove-row-btn:hover {
+      background: #d00;
+    }
+    input[type="text"], input[type="time"] {
+      font-size: 2vw;
+      padding: 0.5vw 1vw;
+      border-radius: 0.5vw;
+      border: 1px solid #888;
+      background: #222;
+      color: #fff;
+      width: 7vw;
+      margin-right: 1vw;
+    }
+    .hidden {
+      display: none;
+    }
+    .past-row {
+      opacity: 0.5;
+      font-size: 1.7vw;
+      transition: opacity 0.3s, font-size 0.3s;
+    }
+    @media (max-width: 600px) {
+      #title { font-size: 7vw; }
+      #clock { font-size: 16vw; }
+      #timetable { font-size: 5vw; }
+      .edit-btn, .save-btn, .add-row-btn { font-size: 4vw; }
+      input[type="text"], input[type="time"] { font-size: 4vw; width: 18vw; }
+      .remove-row-btn { font-size: 3vw; }
+      .past-row { font-size: 3vw; }
+    }
+  </style>
+</head>
+<body>
+  <div id="title" contenteditable="false">Aikataulu</div>
+  <div id="clock">00:00:00</div>
+  <div id="countdown" style="font-size:3vw; margin-bottom:2vw; text-align:center;"></div>
+  <table id="timetable">
+    <thead>
+      <tr>
+        <th>Kellonaika</th>
+        <th>Tapahtuma</th>
+        <th class="edit-col hidden"></th>
+      </tr>
+    </thead>
+    <tbody id="timetable-body">
+      <!-- rows will be rendered by JS -->
+    </tbody>
+  </table>
+  <div id="edit-controls">
+    <button class="edit-btn" onclick="toggleEditMode()">Muokkaa</button>
+    <button class="save-btn hidden" onclick="saveEdits()">Tallenna</button>
+    <button class="add-row-btn hidden" onclick="addRow()">Lisää rivi</button>
+  </div>
+  <script>
+    // --- LocalStorage keys ---
+    const STORAGE_KEY = "timetable_data_v1";
+    const TITLE_KEY = "timetable_title_v1";
+
+    // --- Default timetable ---
+    const defaultTimetable = [
+      { time: "09:00", text: "Kuljettajakokous" },
+      { time: "10:00", text: "Aika-ajo" },
+      { time: "11:00", text: "1. erä" },
+      { time: "12:00", text: "2. erä" }
+    ];
+
+    // --- Load timetable and title from localStorage ---
+    function loadTimetable() {
+      let timetable = [];
+      try {
+        timetable = JSON.parse(localStorage.getItem(STORAGE_KEY)) || defaultTimetable;
+      } catch {
+        timetable = defaultTimetable;
+      }
+      return timetable;
+    }
+    function loadTitle() {
+      return localStorage.getItem(TITLE_KEY) || "Aikataulu";
+    }
+
+    // --- Save timetable and title to localStorage ---
+    function saveTimetable(timetable) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(timetable));
+    }
+    function saveTitle(title) {
+      localStorage.setItem(TITLE_KEY, title);
+    }
+
+    // --- Render timetable ---
+    function renderTimetable(editMode = false) {
+      const tbody = document.getElementById('timetable-body');
+      tbody.innerHTML = "";
+      const timetable = loadTimetable();
+
+      // Get current Helsinki time for comparison
+      const now = new Date();
+      const nowHelsinki = new Date(now.toLocaleString("en-US", { timeZone: "Europe/Helsinki" }));
+
+      timetable.forEach((row, idx) => {
+        const tr = document.createElement('tr');
+
+        // Determine if row is in the past
+        let isPast = false;
+        if (row.time) {
+          const [hh, mm] = row.time.split(":").map(Number);
+          if (!isNaN(hh) && !isNaN(mm)) {
+            const eventDate = new Date(nowHelsinki);
+            eventDate.setHours(hh, mm, 0, 0);
+            if (eventDate < nowHelsinki) isPast = true;
+          }
+        }
+
+        if (editMode) {
+          tr.innerHTML = `
+            <td><input type="time" value="${row.time}" pattern="[0-9]{2}:[0-9]{2}"></td>
+            <td><input type="text" value="${row.text}" style="width:60%;"></td>
+            <td class="edit-col"><button class="remove-row-btn" onclick="removeRow(${idx})">Poista</button></td>
+          `;
+        } else {
+          tr.innerHTML = `
+            <td>${row.time}</td>
+            <td>${row.text}</td>
+            <td class="edit-col hidden"></td>
+          `;
+        }
+
+        if (isPast && !editMode) {
+          tr.classList.add('past-row');
+        }
+        tbody.appendChild(tr);
+      });
+    }
+
+    // --- Remove row ---
+    function removeRow(idx) {
+      const timetable = loadTimetable();
+      timetable.splice(idx, 1);
+      saveTimetable(timetable);
+      renderTimetable(true);
+    }
+
+    // --- Add row ---
+    function addRow() {
+      const timetable = loadTimetable();
+      timetable.push({ time: "12:00", text: "" });
+      saveTimetable(timetable);
+      renderTimetable(true);
+    }
+
+    // --- Editing mode ---
+    let editMode = false;
+    function toggleEditMode() {
+      editMode = !editMode;
+      document.getElementById('title').contentEditable = editMode;
+      document.querySelector('.edit-btn').classList.toggle('hidden', editMode);
+      document.querySelector('.save-btn').classList.toggle('hidden', !editMode);
+      document.querySelector('.add-row-btn').classList.toggle('hidden', !editMode);
+      document.querySelectorAll('.edit-col').forEach(td => td.classList.toggle('hidden', !editMode));
+      renderTimetable(editMode);
+    }
+
+    function saveEdits() {
+      // Save title
+      const titleDiv = document.getElementById('title');
+      saveTitle(titleDiv.textContent.trim());
+
+      // Save timetable
+      const tbody = document.getElementById('timetable-body');
+      const newTimetable = [];
+      for (const row of tbody.rows) {
+        const timeInput = row.cells[0].querySelector('input[type="time"]');
+        const textInput = row.cells[1].querySelector('input[type="text"]');
+        if (timeInput && textInput) {
+          newTimetable.push({
+            time: timeInput.value,
+            text: textInput.value
+          });
+        }
+      }
+      saveTimetable(newTimetable);
+      editMode = false;
+      document.getElementById('title').contentEditable = false;
+      document.querySelector('.edit-btn').classList.remove('hidden');
+      document.querySelector('.save-btn').classList.add('hidden');
+      document.querySelector('.add-row-btn').classList.add('hidden');
+      renderTimetable(false);
+    }
+
+    // --- Title load/save on page load ---
+    document.getElementById('title').textContent = loadTitle();
+
+    // --- Render timetable on page load ---
+    renderTimetable(false);
+
+    // --- Save title on blur (if user clicks away) ---
+    document.getElementById('title').addEventListener('blur', function() {
+      if (editMode) saveTitle(this.textContent.trim());
+    });
+
+    // --- Clock with Finnish time zone (Europe/Helsinki) ---
+    function pad(n) { return n < 10 ? '0' + n : n; }
+    function updateClock() {
+      const now = new Date();
+      const options = { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false, timeZone: 'Europe/Helsinki' };
+      const parts = new Intl.DateTimeFormat('fi-FI', options).formatToParts(now);
+      let h = parts.find(p => p.type === 'hour').value;
+      let m = parts.find(p => p.type === 'minute').value;
+      let s = parts.find(p => p.type === 'second').value;
+      document.getElementById('clock').textContent = `${h}:${m}:${s}`;
+      updateCountdown();
+    }
+    setInterval(updateClock, 1000);
+    updateClock();
+
+    // --- Countdown to next event ---
+    function updateCountdown() {
+      const timetable = loadTimetable();
+      const now = new Date();
+      // Get Helsinki time
+      const nowHelsinki = new Date(now.toLocaleString("en-US", { timeZone: "Europe/Helsinki" }));
+      let nextEvent = null;
+      let minDiff = Infinity;
+      timetable.forEach(row => {
+        if (!row.time) return;
+        const [hh, mm] = row.time.split(":").map(Number);
+        if (isNaN(hh) || isNaN(mm)) return;
+        const eventDate = new Date(nowHelsinki);
+        eventDate.setHours(hh, mm, 0, 0);
+        if (eventDate < nowHelsinki) eventDate.setDate(eventDate.getDate() + 1); // next day if already passed
+        const diff = eventDate - nowHelsinki;
+        if (diff > 0 && diff < minDiff) {
+          minDiff = diff;
+          nextEvent = { ...row, diff };
+        }
+      });
+      const countdownDiv = document.getElementById('countdown');
+      if (nextEvent) {
+        const totalSeconds = Math.floor(nextEvent.diff / 1000);
+        const hours = Math.floor(totalSeconds / 3600);
+        const minutes = Math.floor((totalSeconds % 3600) / 60);
+        const seconds = totalSeconds % 60;
+        countdownDiv.textContent = `${nextEvent.text} alkuun ${pad(hours)}:${pad(minutes)}:${pad(seconds)}`;
+      } else {
+        countdownDiv.textContent = "Ei tulevia tapahtumia";
+      }
+    }
+
+    // --- Save timetable on input change in edit mode ---
+    document.addEventListener('input', function(e) {
+      if (!editMode) return;
+      if (e.target.matches('input[type="time"], input[type="text"]')) {
+        // Save immediately
+        const tbody = document.getElementById('timetable-body');
+        const newTimetable = [];
+        for (const row of tbody.rows) {
+          const timeInput = row.cells[0].querySelector('input[type="time"]');
+          const textInput = row.cells[1].querySelector('input[type="text"]');
+          if (timeInput && textInput) {
+            newTimetable.push({
+              time: timeInput.value,
+              text: textInput.value
+            });
+          }
+        }
+        saveTimetable(newTimetable);
+      }
+    });
+
+    // --- Save title on input in edit mode ---
+    document.getElementById('title').addEventListener('input', function() {
+      if (editMode) saveTitle(this.textContent.trim());
+    });
+
+  </script>
+</body>
+</html>
