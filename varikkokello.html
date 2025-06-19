@@ -82,16 +82,58 @@
         <button onclick="clearDisplay()">Tyhjennä</button>
     </div>
     <script>
+        // Global state for time offset
+        let timeOffsetMs = 0;
+        let offsetReady = false;
+
         function pad(n) { return n < 10 ? '0' + n : n; }
-        function updateClock() {
-            const now = new Date();
-            const h = pad(now.getHours());
-            const m = pad(now.getMinutes());
-            const s = pad(now.getSeconds());
-            document.getElementById('clock').textContent = `${h}:${m}:${s}`;
+
+        // Fetch time from worldtimeapi.org (reliable and public)
+        async function fetchFinnishTime() {
+            try {
+                // Europe/Helsinki is Finnish time zone
+                const resp = await fetch('https://worldtimeapi.org/api/timezone/Europe/Helsinki');
+                if (!resp.ok) throw new Error("Network error");
+                const data = await resp.json();
+                // .datetime is in ISO 8601 format
+                const serverTime = new Date(data.datetime);
+                const localTime = new Date();
+                // Calculate offset
+                timeOffsetMs = serverTime.getTime() - localTime.getTime();
+                offsetReady = true;
+            } catch (e) {
+                // If fetch fails, just use local time as fallback (user may be in right tz)
+                offsetReady = false;
+            }
         }
-        setInterval(updateClock, 1000);
+
+        function getFinnishTime() {
+            // If offsetReady, use offset to show Helsinki time,
+            // otherwise fallback to local time.
+            const now = new Date();
+            if (offsetReady) {
+                return new Date(now.getTime() + timeOffsetMs);
+            }
+            return now;
+        }
+
+        function updateClock() {
+            const now = getFinnishTime();
+            // Forcing display in Finnish timezone (Europe/Helsinki) using toLocaleTimeString
+            // If offsetReady, we can show correct time even if not in that tz.
+            const timeString = now.toLocaleTimeString('fi-FI', { hour12: false, timeZone: "Europe/Helsinki" });
+            document.getElementById('clock').textContent = timeString;
+        }
+
+        // On page load, fetch time from API and start ticking
+        fetchFinnishTime().then(() => {
+            updateClock();
+            setInterval(updateClock, 1000);
+        });
+
+        // Also, update immediately using local time until offset fetched
         updateClock();
+        setInterval(updateClock, 1000);
 
         function handleAction(btn) {
             if (btn.textContent === "Tyhjennä") return;
