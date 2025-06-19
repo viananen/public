@@ -168,15 +168,26 @@
     // --- Render timetable with past row styling ---
     function renderTimetable(editMode = false) {
       const tbody = document.getElementById('timetable-body');
-      tbody.innerHTML = "";
       const timetable = loadTimetable();
 
       // Get current Helsinki time for comparison
       const now = new Date();
       const nowHelsinki = new Date(now.toLocaleString("en-US", { timeZone: "Europe/Helsinki" }));
 
+      // Loop through rows and update or create them
+      while (tbody.rows.length < timetable.length) {
+        tbody.appendChild(document.createElement('tr'));
+      }
+      while (tbody.rows.length > timetable.length) {
+        tbody.deleteRow(tbody.rows.length - 1);
+      }
+
       timetable.forEach((row, idx) => {
-        const tr = document.createElement('tr');
+        let tr = tbody.rows[idx];
+        if (!tr) {
+          tr = document.createElement('tr');
+          tbody.appendChild(tr);
+        }
 
         // Determine if row is in the past
         let isPast = false;
@@ -195,18 +206,19 @@
             <td><input type="text" value="${row.text}" style="width:60%;"></td>
             <td class="edit-col"><button class="remove-row-btn" onclick="removeRow(${idx})">Poista</button></td>
           `;
+          tr.classList.remove('past-row');
         } else {
           tr.innerHTML = `
             <td>${row.time}</td>
             <td>${row.text}</td>
             <td class="edit-col hidden"></td>
           `;
+          if (isPast) {
+            tr.classList.add('past-row');
+          } else {
+            tr.classList.remove('past-row');
+          }
         }
-
-        if (isPast && !editMode) {
-          tr.classList.add('past-row');
-        }
-        tbody.appendChild(tr);
       });
     }
 
@@ -287,7 +299,7 @@
       let s = parts.find(p => p.type === 'second').value;
       document.getElementById('clock').textContent = `${h}:${m}:${s}`;
       updateCountdown();
-      // Update timetable so past rows are updated live
+      // Päivitä aikataulu joka sekunti, jotta rivit muuttuvat kun aika menee ohi
       if (!editMode) renderTimetable(false);
     }
     setInterval(updateClock, 1000);
