@@ -165,7 +165,7 @@
       localStorage.setItem(TITLE_KEY, title);
     }
 
-    // --- Render timetable ---
+    // --- Render timetable with past row styling ---
     function renderTimetable(editMode = false) {
       const tbody = document.getElementById('timetable-body');
       tbody.innerHTML = "";
@@ -287,6 +287,8 @@
       let s = parts.find(p => p.type === 'second').value;
       document.getElementById('clock').textContent = `${h}:${m}:${s}`;
       updateCountdown();
+      // Update timetable so past rows are updated live
+      if (!editMode) renderTimetable(false);
     }
     setInterval(updateClock, 1000);
     updateClock();
