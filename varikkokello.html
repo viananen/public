@@ -22,6 +22,7 @@
             justify-content: center;
             align-items: center;
             height: 100vh;
+            /* Remove transform here, will be set by JS for screensaver effect */
         }
         #clock {
             font-size: 15vw;
@@ -157,6 +158,29 @@
         function clearDisplay() {
             document.getElementById('display').textContent = '';
         }
+
+        // --- Screensaver effect: subtle page movement ---
+        // Moves the body element with a very small, slow, always-changing transform
+        (function startScreensaver() {
+            const amplitude = 0.6; // in vw, max movement in any direction (very small)
+            const frequencyX = 0.00009; // Hz (cycles per ms) - slow
+            const frequencyY = 0.00007;
+            const phaseX = Math.random() * 1000;
+            const phaseY = Math.random() * 1000;
+
+            function animate() {
+                const now = Date.now();
+                // Calculate x and y using slow sine/cosine with tiny amplitude
+                const x = Math.sin(now * frequencyX + phaseX) * amplitude;
+                const y = Math.cos(now * frequencyY + phaseY) * amplitude;
+
+                // Use vw units so it works regardless of window size
+                document.body.style.transform = `translate(${x}vw, ${y}vw)`;
+
+                requestAnimationFrame(animate);
+            }
+            animate();
+        })();
     </script>
 </body>
 </html>
