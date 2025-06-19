@@ -318,7 +318,7 @@
         const hours = Math.floor(totalSeconds / 3600);
         const minutes = Math.floor((totalSeconds % 3600) / 60);
         const seconds = totalSeconds % 60;
-        countdownDiv.textContent = `${nextEvent.text} alkuun ${pad(hours)}:${pad(minutes)}:${pad(seconds)}`;
+        countdownDiv.textContent = `${nextEvent.text} ${pad(hours)}:${pad(minutes)}:${pad(seconds)}`;
       } else {
         countdownDiv.textContent = "Ei tulevia tapahtumia";
       }
