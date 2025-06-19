@@ -24,7 +24,7 @@
     #title {
       font-size: 4vw;
       font-weight: bold;
-      margin: 2vw 0 2vw 0;
+      margin: 2vw 0 0.5vw 0; /* Reduced bottom margin */
       text-align: center;
       outline: none;
       min-width: 30vw;
@@ -33,7 +33,7 @@
     #clock {
       font-size: 10vw;
       font-weight: bold;
-      margin: 1vw 0 2vw 0;
+      margin: 0.5vw 0 2vw 0; /* Reduced top margin */
       text-align: center;
       letter-spacing: 0.05em;
       user-select: none;
@@ -154,13 +154,6 @@
     <div id="clock">00:00:00</div>
     <div id="countdown" style="font-size:3vw; margin-bottom:2vw; text-align:center;"></div>
     <table id="timetable">
-      <thead>
-        <tr>
-          <th>Kellonaika</th>
-          <th>Tapahtuma</th>
-          <th class="edit-col hidden"></th>
-        </tr>
-      </thead>
       <tbody id="timetable-body">
         <!-- rows will be rendered by JS -->
       </tbody>
