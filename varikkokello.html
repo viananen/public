@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="fi">
+<head>
+    <meta charset="UTF-8">
+    <title>Varikkokello</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        html, body {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            background: #000;
+            color: #fff;
+            font-family: Arial, Helvetica, sans-serif;
+            width: 100vw;
+            height: 100vh;
+            overflow: hidden;
+        }
+        body {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+        #clock {
+            font-size: 15vw;
+            font-weight: bold;
+            letter-spacing: 0.05em;
+            text-align: center;
+            width: 100vw;
+            margin: 0;
+            line-height: 1.1;
+            user-select: none;
+        }
+        #display {
+            font-size: 4vw;
+            margin: 2vw 0 4vw 0;
+            min-height: 5vw;
+            text-align: center;
+            color: #fff;
+        }
+        .button-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 2vw;
+            justify-content: center;
+            width: 100vw;
+            margin-bottom: 2vw;
+        }
+        button {
+            background: #444;
+            color: #fff;
+            border: none;
+            border-radius: 0.5vw;
+            padding: 2vw 4vw;
+            font-size: 2.5vw;
+            font-family: inherit;
+            cursor: pointer;
+            margin-bottom: 1vw;
+            transition: background 0.2s;
+        }
+        button:hover, button:focus {
+            background: #666;
+            outline: none;
+        }
+        @media (max-width: 600px) {
+            #clock { font-size: 18vw; }
+            #display { font-size: 7vw; }
+            button { font-size: 5vw; padding: 3vw 6vw; }
+        }
+    </style>
+</head>
+<body>
+    <div id="clock">00:00:00</div>
+    <div id="display"></div>
+    <div class="button-row">
+        <button onclick="handleAction(this)">Kuljettajakokous</button>
+        <button onclick="handleAction(this)">Aika-ajo</button>
+        <button onclick="handleAction(this)">1. erä</button>
+        <button onclick="handleAction(this)">2. erä</button>
+        <button onclick="clearDisplay()">Tyhjennä</button>
+    </div>
+    <script>
+        function pad(n) { return n < 10 ? '0' + n : n; }
+        function updateClock() {
+            const now = new Date();
+            const h = pad(now.getHours());
+            const m = pad(now.getMinutes());
+            const s = pad(now.getSeconds());
+            document.getElementById('clock').textContent = `${h}:${m}:${s}`;
+        }
+        setInterval(updateClock, 1000);
+        updateClock();
+
+        function handleAction(btn) {
+            if (btn.textContent === "Tyhjennä") return;
+            let input = prompt("Anna aika muodossa HH:MM");
+            if (!input) return;
+            input = input.trim();
+            if (!/^\d{1,2}:\d{2}$/.test(input)) {
+                alert("Virheellinen aika! Käytä muotoa HH:MM");
+                return;
+            }
+            let [hh, mm] = input.split(":");
+            hh = parseInt(hh, 10);
+            mm = parseInt(mm, 10);
+            if (isNaN(hh) || isNaN(mm) || hh < 0 || hh > 23 || mm < 0 || mm > 59) {
+                alert("Virheellinen aika! Käytä muotoa HH:MM");
+                return;
+            }
+            document.getElementById('display').textContent = `${btn.textContent} ${pad(hh)}:${pad(mm)}`;
+        }
+
+        function clearDisplay() {
+            document.getElementById('display').textContent = '';
+        }
+    </script>
+</body>
+</html>
